@@ -13,21 +13,29 @@ function updateScreen(value) {
     if (resetScreen) {
         screen.textContent = value;
         resetScreen = false;
+        currentInput = value;
     } else {
-        screen.textContent = screen.textContent === '0' ? value : screen.textContent + value;
+        if (screen.textContent === '0' && value !== '.') {
+            screen.textContent = value;
+        } else {
+            screen.textContent += value;
+        }
+        currentInput = screen.textContent;
     }
 }
 
 // Función para manejar la operación
 function handleOperation(operator) {
-    if (currentInput === '') return;
-    if (previousInput !== '') {
-        calculate();
+    if (currentInput !== '') {
+        if (previousInput !== '') {
+            calculate();
+        } else {
+            previousInput = currentInput;
+        }
+        currentInput = '';
+        resetScreen = true;
     }
     operation = operator;
-    previousInput = currentInput;
-    currentInput = '';
-    resetScreen = true;
 }
 
 // Función para calcular el resultado
@@ -49,15 +57,20 @@ function calculate() {
             result = prev * current;
             break;
         case '/':
-            result = prev / current;
+            if (current !== 0) {
+                result = prev / current;
+            } else {
+                updateScreen('Error');
+                return;
+            }
             break;
         default:
             return;
     }
 
     currentInput = result.toString();
-    operation = null;
     previousInput = '';
+    operation = null;
     updateScreen(currentInput);
 }
 
@@ -85,8 +98,14 @@ buttons.forEach(button => {
     button.addEventListener('click', () => {
         const value = button.textContent.trim();
 
-        if (value >= '0' && value <= '9') {
-            currentInput += value;
+        if ((value >= '0' && value <= '9') || value === '.') {
+            if (resetScreen) {
+                currentInput = value;
+                resetScreen = false;
+            } else {
+                if (value === '.' && currentInput.includes('.')) return;
+                currentInput += value;
+            }
             updateScreen(currentInput);
         } else if (value === 'C') {
             clearCalculator();
